@@ -4,8 +4,6 @@ const WIDTH: usize = 600;
 const HEIGHT: usize = 600;
 
 const MAX_ITER: u32 = 100;
-const COMP_WIDTH: f64 = 2.0;
-const COMP_HEIGHT: f64 = 2.0;
 
 struct Complex {
     re: f64,
@@ -59,12 +57,12 @@ fn mandlebrot(c: &Complex, n: u32) -> u32 {
     n
 }
 
-fn map_to_color(iter: u32) -> (u8, u8, u8) {
-    if iter == MAX_ITER {
+fn map_to_color(iter: u32, max_iters: u32) -> (u8, u8, u8) {
+    if iter == max_iters {
         return (0, 0, 0);
     }
 
-    let t = iter as f64 / MAX_ITER as f64;
+    let t = iter as f64 / max_iters as f64;
     let r = (t * 255.0) as u8;
     let g = ((1.0 - t) * 255.0) as u8;
     let b = 255 - r;
@@ -78,6 +76,15 @@ fn main() {
     let mut center_y  = 0.0;
     let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
 
+    let max_max_iters = 1000;
+    let min_max_iters = 150;
+
+    let mut cur_max_iters = min_max_iters;
+
+    let mut frames_since_move = 0;
+
+
+
     // Create a window
     let mut window = Window::new(
         "Basic Window - ESC to Exit",
@@ -89,43 +96,46 @@ fn main() {
         panic!("Unable to open Window: {}", e);
     });
 
+    
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
+        let change_val = scope * 0.05;
         if window.is_key_down(Key::J) {
-            scope += scope * 0.05;
+            scope += change_val;
+            frames_since_move = 0;
         }
         if window.is_key_down(Key::K) {
-            scope -= scope * 0.05;
+            scope -= change_val;
+            frames_since_move = 0;
         }
 
         if window.is_key_down(Key::W) {
-            center_y += scope * 0.05;
+            center_y += change_val;
+            frames_since_move = 0;
         }
         if window.is_key_down(Key::S) {
-            center_y -= scope * 0.05;
+            center_y -= change_val;
+            frames_since_move = 0;
         }
 
         if window.is_key_down(Key::D) {
-            center_x += scope * 0.05;
+            center_x += change_val;
+            frames_since_move = 0;
         }
         if window.is_key_down(Key::A) {
-            center_x -= scope * 0.05;
+            center_x -= change_val;
+            frames_since_move = 0;
+        }
+
+        if frames_since_move == 0 {
+            cur_max_iters = min_max_iters;
+        } else if frames_since_move % 5 == 0 {
+            cur_max_iters = (cur_max_iters + 100).clamp(min_max_iters, max_max_iters);
         }
 
 
         for y in 0..HEIGHT {
             for x in 0..WIDTH {
-                // let c = window_to_complex(x, y);
-                // let c = window_to_complex_plane(
-                //     x as f64,
-                //     y as f64,
-                //     WIDTH as f64,
-                //     HEIGHT as f64,
-                //     -0.5 -scope,
-                //     -0.5 + scope,
-                //     -scope,
-                //     scope,
-                // );
                 let c = window_to_complex_plane(
                     x as f64,
                     y as f64,
@@ -136,13 +146,14 @@ fn main() {
                     center_y -scope,
                     center_y + scope,
                 );
-                let iter = mandlebrot(&c, 100);
-                let (r, g, b) = map_to_color(iter);
+                let iter = mandlebrot(&c, cur_max_iters);
+                let (r, g, b) = map_to_color(iter, cur_max_iters);
                 
                 let color = (r as u32) << 16 | (g as u32) << 8 | b as u32;
 
                 buffer[y * WIDTH + x] = color;
             }
+            frames_since_move += 1;
         }
         window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
     }
