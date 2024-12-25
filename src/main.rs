@@ -39,13 +39,6 @@ fn window_to_complex_plane(
     Complex { re, im }
 }
 
-fn window_to_complex(x: usize, y: usize) -> Complex {
-    let r = COMP_WIDTH * ((x - (WIDTH / 2)) as f64 / WIDTH as f64);
-    let i = COMP_HEIGHT * -((y - (HEIGHT / 2)) as f64) / HEIGHT as f64;
-
-    Complex { re: r, im: i }
-}
-
 fn modulus(z: &Complex) -> f64 {
     (z.im * z.im + z.re * z.re).sqrt()
 }
@@ -66,6 +59,9 @@ fn diverges(c: &Complex, n: u32) -> bool {
 }
 
 fn main() {
+    let mut scope = 1.0;
+    let mut center_x = -0.5;
+    let mut center_y  = 0.0;
     let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
 
     for y in 0..HEIGHT {
@@ -76,10 +72,10 @@ fn main() {
                 y as f64,
                 WIDTH as f64,
                 HEIGHT as f64,
-                -2.0,
-                2.0,
-                -2.0,
-                2.0,
+                center_x - scope,
+                center_x + scope,
+                center_y -scope,
+                center_y + scope,
             );
             let point_diverges = diverges(&c, 100);
             if point_diverges {
@@ -103,6 +99,59 @@ fn main() {
 
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
+        if window.is_key_down(Key::J) {
+            scope += scope * 0.05;
+        }
+        if window.is_key_down(Key::K) {
+            scope -= scope * 0.05;
+        }
+
+        if window.is_key_down(Key::W) {
+            center_y += scope * 0.05;
+        }
+        if window.is_key_down(Key::S) {
+            center_y -= scope * 0.05;
+        }
+
+        if window.is_key_down(Key::D) {
+            center_x += scope * 0.05;
+        }
+        if window.is_key_down(Key::A) {
+            center_x -= scope * 0.05;
+        }
+
+
+        for y in 0..HEIGHT {
+            for x in 0..WIDTH {
+                // let c = window_to_complex(x, y);
+                // let c = window_to_complex_plane(
+                //     x as f64,
+                //     y as f64,
+                //     WIDTH as f64,
+                //     HEIGHT as f64,
+                //     -0.5 -scope,
+                //     -0.5 + scope,
+                //     -scope,
+                //     scope,
+                // );
+                let c = window_to_complex_plane(
+                    x as f64,
+                    y as f64,
+                    WIDTH as f64,
+                    HEIGHT as f64,
+                    center_x - scope,
+                    center_x + scope,
+                    center_y -scope,
+                    center_y + scope,
+                );
+                let point_diverges = diverges(&c, 100);
+                if point_diverges {
+                    buffer[x + y * WIDTH] = 0xFF0000;
+                } else {
+                    buffer[x + y * WIDTH] = 0;
+                }
+            }
+        }
         window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
     }
 }
