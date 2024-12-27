@@ -3,8 +3,6 @@ use minifb::{Key, Window, WindowOptions};
 const WIDTH: usize = 600;
 const HEIGHT: usize = 600;
 
-const MAX_ITER: u32 = 100;
-
 struct Complex {
     re: f64,
     im: f64,
@@ -23,6 +21,7 @@ fn mul(a: &Complex, b: &Complex) -> Complex {
         im: a.re * b.im + a.im * b.re,
     }
 }
+
 fn window_to_complex_plane(
     x: f64,
     y: f64,
@@ -57,6 +56,30 @@ fn mandlebrot(c: &Complex, n: u32) -> u32 {
     n
 }
 
+fn mandlebrot2(c: &Complex, n: u32) -> u32 {
+    let mut  a = c.re;
+    let mut b = c.im;
+
+    let mut a_n = a;
+    let mut b_n = b;
+
+    let c_re = a;
+    let c_im = b;
+
+    for i in 0..n {
+        if a * a + b * b > 4.0 {
+            return i
+        }
+
+        a_n = a * a - b * b;
+        b_n = 2.0 * a * b;
+        a = a_n + c_re;
+        b = b_n + c_im;
+    }
+
+    n
+}
+
 fn map_to_color(iter: u32, max_iters: u32) -> (u8, u8, u8) {
     if iter == max_iters {
         return (0, 0, 0);
@@ -70,13 +93,13 @@ fn map_to_color(iter: u32, max_iters: u32) -> (u8, u8, u8) {
     (r, g, b)
 }
 
-fn main() {
+fn main() {    
     let mut scope = 1.0;
     let mut center_x = -0.5;
     let mut center_y  = 0.0;
     let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
 
-    let max_max_iters = 1000;
+    let max_max_iters = 2000;
     let min_max_iters = 150;
 
     let mut cur_max_iters = min_max_iters;
@@ -146,7 +169,8 @@ fn main() {
                     center_y -scope,
                     center_y + scope,
                 );
-                let iter = mandlebrot(&c, cur_max_iters);
+                // let iter = mandlebrot(&c, cur_max_iters);
+                let iter = mandlebrot2(&c, cur_max_iters);
                 let (r, g, b) = map_to_color(iter, cur_max_iters);
                 
                 let color = (r as u32) << 16 | (g as u32) << 8 | b as u32;
